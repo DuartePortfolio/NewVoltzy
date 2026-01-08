@@ -19,20 +19,20 @@ app.get('/health', (req, res) => res.json({ ok: true }));
 
 // POST /auth/signup
 app.post('/auth/signup', async (req, res) => {
-  const { name, username, email, password } = req.body;
-  if (!name || !username || !email || !password) return res.status(400).json({ message: 'Missing fields' });
+  const { name, email, password } = req.body;
+  if (!name || !email || !password) return res.status(400).json({ message: 'Missing fields' });
 
   try {
     // check unique
-    const [rows] = await pool.query('SELECT id FROM users WHERE username = ? OR email = ? LIMIT 1', [username, email]);
-    if (rows && rows.length) return res.status(409).json({ message: 'Username or email already in use' });
+    const [rows] = await pool.query('SELECT id FROM users WHERE email = ? LIMIT 1', [email]);
+    if (rows && rows.length) return res.status(409).json({ message: 'Email already in use' });
 
     const hash = await bcrypt.hash(password, 10);
-    const [result] = await pool.query('INSERT INTO users (name, username, email, password_hash, created_at) VALUES (?, ?, ?, ?, NOW())', [name, username, email, hash]);
+      const [result] = await pool.query('INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)', [name, email, hash]);
     const userId = result.insertId;
 
     const token = jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '7d' });
-    return res.json({ user: { id: userId, name, username, email }, token });
+    return res.json({ user: { id: userId, name, email }, token });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });
@@ -45,12 +45,8 @@ app.post('/auth/signin', async (req, res) => {
   if (!identifier || !password) return res.status(400).json({ message: 'Missing fields' });
 
   try {
-    let rows;
-    if (identifier.includes('@')) {
-      [rows] = await pool.query('SELECT * FROM users WHERE email = ? LIMIT 1', [identifier]);
-    } else {
-      [rows] = await pool.query('SELECT * FROM users WHERE username = ? LIMIT 1', [identifier]);
-    }
+      // Only allow email login
+      const [rows] = await pool.query('SELECT * FROM users WHERE email = ? LIMIT 1', [identifier]);
 
     if (!rows || rows.length === 0) return res.status(401).json({ message: 'Invalid credentials' });
     const user = rows[0];
@@ -58,7 +54,7 @@ app.post('/auth/signin', async (req, res) => {
     if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
 
     const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '7d' });
-    return res.json({ user: { id: user.id, name: user.name, username: user.username, email: user.email }, token });
+    return res.json({ user: { id: user.id, name: user.name, email: user.email }, token });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });

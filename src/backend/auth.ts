@@ -3,7 +3,6 @@ import { setToken, getToken } from './token';
 
 type SignUpData = {
   name: string;
-  username: string;
   email: string;
   password: string;
 };
@@ -32,7 +31,8 @@ async function request(path: string, body: any) {
 }
 
 export async function signUp(payload: SignUpData) {
-  const data = await request(ENDPOINTS.SIGN_UP, payload);
+  const { name, email, password } = payload;
+  const data = await request(ENDPOINTS.SIGN_UP, { name, email, password });
   if (data && data.token) await setToken(data.token);
   return data;
 }

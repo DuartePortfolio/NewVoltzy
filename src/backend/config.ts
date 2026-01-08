@@ -4,7 +4,7 @@
 // - Android emulator (Android Studio): use 10.0.2.2
 // - iOS simulator: use localhost
 // - Expo on device: use your machine IP (e.g. http://192.168.1.10:3000)
-export const BASE_URL = 'http://10.0.2.2:3000';
+export const BASE_URL = 'http://127.0.0.1:3000';
 
 // Endpoints used by the app
 export const ENDPOINTS = {

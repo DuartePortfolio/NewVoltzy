@@ -16,14 +16,13 @@ type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
 
 const SignInScreen: React.FC<Props> = ({ navigation }) => {
   const [name, setName] = useState('');
-  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleSignIn = async () => {
     try {
-      console.log('Sign Up attempt', { name, username, email });
-      const res = await signUp({ name, username, email, password });
+      console.log('Sign Up attempt', { name, email });
+      const res = await signUp({ name, email, password });
       console.log('SignUp response', res);
       navigation.replace('Dashboard');
     } catch (err: any) {
@@ -133,14 +132,6 @@ const SignInScreen: React.FC<Props> = ({ navigation }) => {
               value={name}
               onChangeText={setName}
               autoCapitalize="words"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="username"
-              placeholderTextColor="#999"
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
             />
             <TextInput
               style={styles.input}

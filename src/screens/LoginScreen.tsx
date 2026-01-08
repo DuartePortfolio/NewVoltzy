@@ -15,12 +15,12 @@ type RootStackParamList = {
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = async () => {
     try {
-      const res = await signIn(username, password);
+      const res = await signIn(email, password);
       console.log('Login response', res);
       navigation.replace('Dashboard');
     } catch (err: any) {
@@ -85,10 +85,11 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.form}>
             <TextInput
               style={styles.input}
-              placeholder="username"
+              placeholder="email"
               placeholderTextColor="#999"
-              value={username}
-              onChangeText={setUsername}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
               autoCapitalize="none"
             />
             <TextInput
