@@ -1,10 +1,86 @@
 import { StyleSheet } from 'react-native';
 
 export default StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
-  welcome: { fontSize: 20, color: '#FFF' },
-  title: { fontSize: 48, fontWeight: '900', marginVertical: 12, color: '#FFF' },
-  button: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1E7B45', padding: 12, borderRadius: 10, marginTop: 20 },
-  buttonText: { color: 'white', fontWeight: '700', marginLeft: 8 },
-  icon: { width: 28, height: 28 }
+  container: {
+    flex: 1,
+    backgroundColor: '#6CB66F',
+    position: 'relative',
+  },
+  progressBarContainer: {
+    position: 'absolute',
+    top: 40,
+    left: '50%',
+    transform: [{ translateX: -100 }],
+    width: 200,
+    height: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 10,
+    overflow: 'hidden',
+    zIndex: 10,
+  },
+  progressBar: {
+    width: '25%',
+    height: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+  },
+  backgroundSvg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 5,
+    paddingHorizontal: 20,
+  },
+  welcome: {
+    fontSize: 32,
+    color: '#FFFFFF',
+    fontWeight: '300',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 72,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 80,
+    letterSpacing: 1,
+  },
+  buttonWrapper: {
+    width: 280,
+    height: 180,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonBlob: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  blobSvg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  buttonContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+  },
+  buttonText: {
+    color: '#000000',
+    fontSize: 20,
+    fontWeight: '600',
+    marginTop: 8,
+  },
 });
