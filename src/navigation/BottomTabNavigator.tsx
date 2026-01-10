@@ -163,22 +163,24 @@ function ScheduleIcon({ focused }: { focused: boolean }) {
 
 function GraphIcon({ focused }: { focused: boolean }) {
   return (
-    <Svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-      <Path
-        d="M6.66675 8.3335V31.6668C6.66675 32.5873 7.41295 33.3335 8.33341 33.3335H31.6667"
-        stroke="#43734C"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Path
-        d="M30.0001 15L21.6667 23.3332L17.5001 19.1663L11.6667 24.9997"
-        stroke="#43734C"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
+    <View style={[styles.tabIconContainer, focused && styles.tabIconActive]}>
+      <Svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+        <Path
+          d="M6.66675 8.3335V31.6668C6.66675 32.5873 7.41295 33.3335 8.33341 33.3335H31.6667"
+          stroke={focused ? '#FFFFFF' : '#43734C'}
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M30.0001 15L21.6667 23.3332L17.5001 19.1663L11.6667 24.9997"
+          stroke={focused ? '#FFFFFF' : '#43734C'}
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+    </View>
   );
 }
 
