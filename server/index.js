@@ -74,8 +74,8 @@ app.post('/auth/signin', async (req, res) => {
 
 // Mount API route modules
 app.use('/api/houses', housesRoutes);
-app.use('/api/lights', lightsRoutes);
-app.use('/api/routines', routinesRoutes);
+app.use('/api', lightsRoutes);  // Lights routes already have /houses/:houseId prefix
+app.use('/api', routinesRoutes);  // Routines routes already have /houses/:houseId prefix
 app.use('/api', energyRoutes);
 app.use('/api/user', userRoutes);
 

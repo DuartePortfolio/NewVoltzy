@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,15 +7,47 @@ import {
   ScrollView,
   Image,
   Dimensions,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
-import { mockRoutines, PROFILE_PLACEHOLDER } from '../data/mockData';
+import { PROFILE_PLACEHOLDER } from '../data/mockData';
+import { routinesService } from '../services/routinesService';
+import { useApp } from '../contexts/AppContext';
 
 const { width } = Dimensions.get('window');
 
+interface Routine {
+  id: number;
+  name: string;
+  active: boolean;
+}
+
 export default function RoutinesListScreen({ navigation }: any) {
-  const handleRoutinePress = (routineId: string) => {
+  const { currentHouse } = useApp();
+  const [routines, setRoutines] = useState<Routine[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadRoutines();
+  }, [currentHouse]);
+
+  const loadRoutines = async () => {
+    if (!currentHouse) return;
+    try {
+      setLoading(true);
+      const data = await routinesService.getRoutinesByHouse(currentHouse.id);
+      setRoutines(data);
+    } catch (error: any) {
+      console.error('Failed to load routines:', error);
+      Alert.alert('Error', 'Failed to load routines');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRoutinePress = (routineId: number) => {
     navigation.navigate('RoutineDetail', { routineId });
   };
 
@@ -73,17 +105,30 @@ export default function RoutinesListScreen({ navigation }: any) {
         </View>
 
         {/* Routine Cards Grid */}
-        <View style={styles.routinesGrid}>
-          {mockRoutines.map((routine) => (
-            <TouchableOpacity
-              key={routine.id}
-              style={styles.routineCard}
-              onPress={() => handleRoutinePress(routine.id)}
-            >
-              <Text style={styles.routineName}>{routine.name}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {loading ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 40 }}>
+            <ActivityIndicator size="large" color="#FFFFFF" />
+          </View>
+        ) : routines.length === 0 ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 40 }}>
+            <Text style={{ color: '#FFFFFF', fontSize: 16 }}>No routines yet</Text>
+          </View>
+        ) : (
+          <View style={styles.routinesGrid}>
+            {routines.map((routine) => (
+              <TouchableOpacity
+                key={routine.id}
+                style={styles.routineCard}
+                onPress={() => handleRoutinePress(routine.id)}
+              >
+                <Text style={styles.routineName}>{routine.name}</Text>
+                <Text style={{ fontSize: 12, color: routine.active ? '#34C759' : '#999', marginTop: 4 }}>
+                  {routine.active ? 'Active' : 'Inactive'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </ScrollView>
     </LinearGradient>
   );

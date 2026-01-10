@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,21 +7,81 @@ import {
   ScrollView,
   Image,
   Dimensions,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import Slider from '@react-native-community/slider';
-import { mockLights, PROFILE_PLACEHOLDER } from '../data/mockData';
+import { PROFILE_PLACEHOLDER } from '../data/mockData';
+import { lightsService } from '../services/lightsService';
+import { useApp } from '../contexts/AppContext';
 
 const { width } = Dimensions.get('window');
 
+interface Light {
+  id: number;
+  name: string;
+  room_name: string;
+  is_on: boolean;
+  brightness: number;
+  color: string;
+}
+
 export default function LightDetailScreen({ route, navigation }: any) {
   const { lightId } = route.params;
-  const light = mockLights.find((l) => l.id === lightId) || mockLights[0];
+  const { currentHouse } = useApp();
+  const [light, setLight] = useState<Light | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const [isOn, setIsOn] = useState(light.isOn);
-  const [brightness, setBrightness] = useState(light.brightness);
-  const [selectedColor, setSelectedColor] = useState(light.color);
+  const [isOn, setIsOn] = useState(false);
+  const [brightness, setBrightness] = useState(0);
+  const [selectedColor, setSelectedColor] = useState('#FFFFFF');
+
+  useEffect(() => {
+    loadLight();
+  }, [lightId]);
+
+  const loadLight = async () => {
+    try {
+      setLoading(true);
+      const data = await lightsService.getLight(lightId);
+      setLight(data);
+      setIsOn(data.is_on);
+      setBrightness(data.brightness);
+      setSelectedColor(data.color);
+    } catch (error: any) {
+      console.error('Failed to load light:', error);
+      Alert.alert('Error', 'Failed to load light details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveChanges = async () => {
+    try {
+      await lightsService.updateLight(lightId, {
+        is_on: isOn,
+        brightness: brightness,
+        color: selectedColor,
+      });
+      Alert.alert('Success', 'Light updated successfully');
+      navigation.goBack();
+    } catch (error: any) {
+      console.error('Failed to update light:', error);
+      Alert.alert('Error', 'Failed to update light');
+    }
+  };
+
+  if (loading || !light) {
+    return (
+      <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+        </View>
+      </LinearGradient>
+    );
+  }
 
   return (
     <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
@@ -77,7 +137,7 @@ export default function LightDetailScreen({ route, navigation }: any) {
         </TouchableOpacity>
 
         {/* Light Info */}
-        <Text style={styles.roomName}>{light.room}</Text>
+        <Text style={styles.roomName}>{light.room_name}</Text>
         <Text style={styles.lightName}>{light.name}</Text>
 
         {/* Power Control */}
@@ -127,8 +187,8 @@ export default function LightDetailScreen({ route, navigation }: any) {
         </View>
 
         {/* Edit Light Button */}
-        <TouchableOpacity style={styles.editButton}>
-          <Text style={styles.editButtonText}>Edit Light</Text>
+        <TouchableOpacity style={styles.editButton} onPress={handleSaveChanges}>
+          <Text style={styles.editButtonText}>Save Changes</Text>
         </TouchableOpacity>
       </ScrollView>
     </LinearGradient>

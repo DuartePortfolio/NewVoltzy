@@ -1,8 +1,10 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { Svg, Path, Ellipse, Defs, LinearGradient, Stop } from 'react-native-svg';
 import styles from '../styles/lightingControlStyles';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useApp } from '../contexts/AppContext';
+import { housesService } from '../services/housesService';
 
 type RootStackParamList = {
   Login: undefined;
@@ -29,7 +31,33 @@ const RoomCard: React.FC<RoomCardProps> = ({ roomName, onPress }) => {
 };
 
 const ChooseARoomScreen: React.FC<Props> = ({ navigation }) => {
-  const rooms = ['Living Room', 'Kitchen', 'Small Bedroom', 'Big Bedroom', 'Bathroom', 'Hall'];
+  const { currentHouse } = useApp();
+  const [rooms, setRooms] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadRooms();
+  }, [currentHouse]);
+
+  const loadRooms = async () => {
+    if (!currentHouse) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // Get unique room names from lights
+      const roomNames = await housesService.getRoomNames(currentHouse.id);
+      setRooms(roomNames.length > 0 ? roomNames : ['Living Room', 'Kitchen', 'Bedroom', 'Bathroom']);
+    } catch (error) {
+      console.error('Failed to load rooms:', error);
+      // Fallback to default rooms
+      setRooms(['Living Room', 'Kitchen', 'Bedroom', 'Bathroom']);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleRoomPress = (roomName: string) => {
     console.log(`Room selected: ${roomName}`);
@@ -38,7 +66,7 @@ const ChooseARoomScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleAddRoom = () => {
     console.log('Add room pressed');
-    // Handle add room action
+    // TODO: Implement add room modal/screen
   };
 
   return (
@@ -136,7 +164,7 @@ const ChooseARoomScreen: React.FC<Props> = ({ navigation }) => {
           </View>
 
           {/* House ID */}
-          <Text style={styles.houseId}>House 1</Text>
+          <Text style={styles.houseId}>{currentHouse?.name || 'House 1'}</Text>
         </View>
 
         {/* Choose a Room Section */}
@@ -158,11 +186,15 @@ const ChooseARoomScreen: React.FC<Props> = ({ navigation }) => {
           </View>
 
           {/* Room Cards Grid */}
-          <View style={styles.roomsGrid}>
-            {rooms.map((room, index) => (
-              <RoomCard key={index} roomName={room} onPress={() => handleRoomPress(room)} />
-            ))}
-          </View>
+          {loading ? (
+            <ActivityIndicator size="large" color="#FFFFFF" style={{ marginTop: 40 }} />
+          ) : (
+            <View style={styles.roomsGrid}>
+              {rooms.map((room, index) => (
+                <RoomCard key={index} roomName={room} onPress={() => handleRoomPress(room)} />
+              ))}
+            </View>
+          )}
         </View>
       </ScrollView>
 

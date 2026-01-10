@@ -1,23 +1,83 @@
-import React, { useState } from 'react';
-import { View, Text, Switch, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Switch, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
 import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { PROFILE_PLACEHOLDER } from '../data/mockData';
 import styles from '../styles/dashboardStyles';
+import { energyService, CurrentEnergyStats, HourlyConsumption } from '../services/energyService';
+import { lightsService } from '../services/lightsService';
+import { routinesService } from '../services/routinesService';
+import { useApp } from '../contexts/AppContext';
+
+interface Light {
+  id: number;
+  name: string;
+  room_name: string;
+  is_on: boolean;
+  power_consumption_watts: number;
+}
 
 const DashboardScreen: React.FC = () => {
-  const [lights, setLights] = useState({
-    kitchen: true,
-    bedroom: true,
-    bathroom: true,
-    livingRoom: true,
-  });
-
+  const { currentHouse } = useApp();
+  const [lights, setLights] = useState<Light[]>([]);
+  const [energyStats, setEnergyStats] = useState<CurrentEnergyStats | null>(null);
+  const [hourlyData, setHourlyData] = useState<HourlyConsumption | null>(null);
+  const [routines, setRoutines] = useState<any[]>([]);
   const [activeRoutine, setActiveRoutine] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const toggleLight = (key: string) => {
-    setLights(prev => ({ ...prev, [key]: !prev[key as keyof typeof prev] }));
+  useEffect(() => {
+    loadDashboardData();
+  }, [currentHouse]);
+
+  const loadDashboardData = async () => {
+    if (!currentHouse) return;
+    try {
+      setLoading(true);
+      const [statsData, hourlyDataResult, lightsData, routinesData] = await Promise.all([
+        energyService.getCurrentStats(currentHouse.id),
+        energyService.getHourlyConsumption(currentHouse.id),
+        lightsService.getLightsByHouse(currentHouse.id),
+        routinesService.getRoutinesByHouse(currentHouse.id),
+      ]);
+      setEnergyStats(statsData);
+      setHourlyData(hourlyDataResult);
+      setLights(lightsData);
+      setRoutines(routinesData);
+    } catch (error: any) {
+      console.error('Failed to load dashboard data:', error);
+      Alert.alert('Error', 'Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const toggleLight = async (lightId: number) => {
+    try {
+      const light = lights.find(l => l.id === lightId);
+      if (!light) return;
+      await lightsService.toggleLight(lightId, light.is_on);
+      setLights(lights.map(l => l.id === lightId ? { ...l, is_on: !l.is_on } : l));
+      // Reload stats after toggling
+      if (currentHouse) {
+        const statsData = await energyService.getCurrentStats(currentHouse.id);
+        setEnergyStats(statsData);
+      }
+    } catch (error: any) {
+      console.error('Failed to toggle light:', error);
+      Alert.alert('Error', 'Failed to toggle light');
+    }
+  };
+
+  if (loading) {
+    return (
+      <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+        </View>
+      </LinearGradient>
+    );
+  }
 
   return (
     <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
@@ -65,15 +125,15 @@ const DashboardScreen: React.FC = () => {
         <View style={styles.statsSection}>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>Lights on</Text>
-            <Text style={styles.statValue}>5</Text>
+            <Text style={styles.statValue}>{energyStats?.lights_on_count || 0}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>Energy Used</Text>
-            <Text style={styles.statValue}>32.4<Text style={styles.statUnit}>kW/h</Text></Text>
+            <Text style={styles.statValue}>{Number(energyStats?.today_consumption_kwh || 0).toFixed(1)}<Text style={styles.statUnit}>kWh</Text></Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>Energy Saved</Text>
-            <Text style={styles.statValue}>14.8<Text style={styles.statUnit}>kWh</Text></Text>
+            <Text style={styles.statValue}>{Number(energyStats?.today_saved_kwh || 0).toFixed(1)}<Text style={styles.statUnit}>kWh</Text></Text>
           </View>
         </View>
 
@@ -88,16 +148,14 @@ const DashboardScreen: React.FC = () => {
                   <Stop offset="1" stopColor="#FFFFFF" stopOpacity="0.02" />
                 </SvgLinearGradient>
               </Defs>
-              <Path d={generateAreaPath([20, 35, 65, 45, 55, 30, 25], 350, 120)} fill="url(#chartGrad)" />
-              <Path d={generateLinePath([20, 35, 65, 45, 55, 30, 25], 350, 120)} stroke="#FFFFFF" strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              <Path d={generateAreaPath(hourlyData?.hourly_data.map(h => h.consumption_kwh) || [], 350, 120)} fill="url(#chartGrad)" />
+              <Path d={generateLinePath(hourlyData?.hourly_data.map(h => h.consumption_kwh) || [], 350, 120)} stroke="#FFFFFF" strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round" />
             </Svg>
           </View>
           <View style={styles.timeLabels}>
-            <Text style={styles.timeLabel}>6:07</Text>
-            <Text style={styles.timeLabel}>9:00</Text>
-            <Text style={styles.timeLabel}>12:00</Text>
-            <Text style={styles.timeLabel}>15:00</Text>
-            <Text style={styles.timeLabel}>18:00</Text>
+            {(hourlyData?.hourly_data || []).filter((_, i) => i % 4 === 0).slice(0, 6).map(h => (
+              <Text key={h.hour} style={styles.timeLabel}>{h.hour}:00</Text>
+            ))}
           </View>
         </View>
 
@@ -106,56 +164,26 @@ const DashboardScreen: React.FC = () => {
           <Text style={styles.sectionTitle}>Lights</Text>
         </View>
         <View style={styles.lightsCard}>
-          <View style={styles.lightsGrid}>
-            <View style={styles.lightItem}>
-              <View>
-                <Text style={styles.lightName}>Kitchen</Text>
-                <Text style={styles.lightSub}>8.2 kW/h</Text>
-              </View>
-              <Switch
-                value={lights.kitchen}
-                onValueChange={() => toggleLight('kitchen')}
-                trackColor={{ false: '#e0e0e0', true: '#FFFFFF' }}
-                thumbColor="#78B85E"
-              />
+          {lights.length === 0 ? (
+            <Text style={{ color: '#666', textAlign: 'center', padding: 20 }}>No lights found</Text>
+          ) : (
+            <View style={styles.lightsGrid}>
+              {lights.slice(0, 4).map((light) => (
+                <View key={light.id} style={styles.lightItem}>
+                  <View>
+                    <Text style={styles.lightName}>{light.name}</Text>
+                    <Text style={styles.lightSub}>{(light.power_consumption_watts / 1000).toFixed(1)} kW/h</Text>
+                  </View>
+                  <Switch
+                    value={light.is_on}
+                    onValueChange={() => toggleLight(light.id)}
+                    trackColor={{ false: '#e0e0e0', true: '#FFFFFF' }}
+                    thumbColor="#78B85E"
+                  />
+                </View>
+              ))}
             </View>
-            <View style={styles.lightItem}>
-              <View>
-                <Text style={styles.lightName}>Bedroom</Text>
-                <Text style={styles.lightSub}>8.2 kW/h</Text>
-              </View>
-              <Switch
-                value={lights.bedroom}
-                onValueChange={() => toggleLight('bedroom')}
-                trackColor={{ false: '#e0e0e0', true: '#FFFFFF' }}
-                thumbColor="#78B85E"
-              />
-            </View>
-            <View style={styles.lightItem}>
-              <View>
-                <Text style={styles.lightName}>Bathroom</Text>
-                <Text style={styles.lightSub}>8.2 kW/h</Text>
-              </View>
-              <Switch
-                value={lights.bathroom}
-                onValueChange={() => toggleLight('bathroom')}
-                trackColor={{ false: '#e0e0e0', true: '#FFFFFF' }}
-                thumbColor="#78B85E"
-              />
-            </View>
-            <View style={styles.lightItem}>
-              <View>
-                <Text style={styles.lightName}>Living Room</Text>
-                <Text style={styles.lightSub}>8.2 kW/h</Text>
-              </View>
-              <Switch
-                value={lights.livingRoom}
-                onValueChange={() => toggleLight('livingRoom')}
-                trackColor={{ false: '#e0e0e0', true: '#FFFFFF' }}
-                thumbColor="#78B85E"
-              />
-            </View>
-          </View>
+          )}
         </View>
 
         {/* Routines Section */}
@@ -163,17 +191,21 @@ const DashboardScreen: React.FC = () => {
           <Text style={styles.sectionTitle}>Routines</Text>
         </View>
         <View style={styles.routinesCard}>
-          <View style={styles.routineRow}>
-            {['Night', 'Day', 'Eco', 'Comfort'].map(r => (
-              <TouchableOpacity 
-                key={r} 
-                onPress={() => setActiveRoutine(prev => prev === r ? null : r)}
-                style={[styles.routineButton, activeRoutine === r && styles.routineActive]}
-              >
-                <Text style={[styles.routineText, activeRoutine === r && styles.routineTextActive]}>{r}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          {routines.length === 0 ? (
+            <Text style={{ color: '#666', textAlign: 'center', padding: 20 }}>No routines found</Text>
+          ) : (
+            <View style={styles.routineRow}>
+              {routines.slice(0, 4).map(r => (
+                <TouchableOpacity 
+                  key={r.id} 
+                  onPress={() => setActiveRoutine(prev => prev === r.name ? null : r.name)}
+                  style={[styles.routineButton, (activeRoutine === r.name || r.active) && styles.routineActive]}
+                >
+                  <Text style={[styles.routineText, (activeRoutine === r.name || r.active) && styles.routineTextActive]}>{r.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
 
         {/* House Action Buttons */}

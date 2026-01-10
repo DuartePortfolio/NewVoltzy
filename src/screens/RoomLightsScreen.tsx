@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,18 +7,46 @@ import {
   ScrollView,
   Image,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Ellipse } from 'react-native-svg';
-import { mockLights, PROFILE_PLACEHOLDER } from '../data/mockData';
+import { PROFILE_PLACEHOLDER } from '../data/mockData';
+import { useApp } from '../contexts/AppContext';
+import { lightsService, Light } from '../services/lightsService';
 
 const { width } = Dimensions.get('window');
 
 export default function RoomLightsScreen({ navigation, route }: any) {
   const { roomName = 'Living Room' } = route.params || {};
+  const { currentHouse } = useApp();
+  const [lights, setLights] = useState<Light[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  const handleLightPress = (lightId: string) => {
-    navigation.navigate('LightDetail', { lightId });
+  useEffect(() => {
+    loadLights();
+  }, [currentHouse, roomName]);
+
+  const loadLights = async () => {
+    if (!currentHouse) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const roomLights = await lightsService.getLightsByRoom(currentHouse.id, roomName);
+      setLights(roomLights);
+    } catch (error) {
+      console.error('Failed to load lights:', error);
+      setLights([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleLightPress = (lightId: number) => {
+    navigation.navigate('LightDetail', { lightId: lightId.toString() });
   };
 
   return (
@@ -54,7 +82,7 @@ export default function RoomLightsScreen({ navigation, route }: any) {
             <Image source={{ uri: PROFILE_PLACEHOLDER }} style={styles.profilePic} />
           </View>
 
-          <Text style={styles.houseId}>House 1</Text>
+          <Text style={styles.houseId}>{currentHouse?.name || 'House 1'}</Text>
         </View>
 
         {/* Back Button */}
@@ -95,17 +123,23 @@ export default function RoomLightsScreen({ navigation, route }: any) {
         </View>
 
         {/* Light Cards Grid */}
-        <View style={styles.lightsGrid}>
-          {mockLights.map((light) => (
-            <TouchableOpacity
-              key={light.id}
-              style={styles.lightCard}
-              onPress={() => handleLightPress(light.id)}
-            >
-              <Text style={styles.lightName}>{light.name}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {loading ? (
+          <ActivityIndicator size="large" color="#FFFFFF" style={{ marginTop: 40 }} />
+        ) : lights.length === 0 ? (
+          <Text style={styles.noLightsText}>No lights in this room yet</Text>
+        ) : (
+          <View style={styles.lightsGrid}>
+            {lights.map((light) => (
+              <TouchableOpacity
+                key={light.id}
+                style={styles.lightCard}
+                onPress={() => handleLightPress(light.id)}
+              >
+                <Text style={styles.lightName}>{light.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         {/* Edit Room Button */}
         <TouchableOpacity style={styles.editButton}>
@@ -261,6 +295,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#000000',
+  },
+  noLightsText: {
+    fontFamily: 'Comfortaa',
+    fontSize: 16,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginTop: 40,
+    opacity: 0.8,
   },
   editButton: {
     alignSelf: 'center',

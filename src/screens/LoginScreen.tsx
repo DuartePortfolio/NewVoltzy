@@ -4,6 +4,7 @@ import { Svg, Path } from 'react-native-svg';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import styles from '../styles/loginStyles';
 import { signIn } from '../backend/auth';
+import { useApp } from '../contexts/AppContext';
 
 type RootStackParamList = {
   Login: undefined;
@@ -15,6 +16,7 @@ type RootStackParamList = {
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
+  const { setUser, refreshHouses } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -22,7 +24,11 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     try {
       const res = await signIn(email, password);
       console.log('Login response', res);
-      navigation.replace('Dashboard');
+      // Set user in context
+      setUser(res.user);
+      // Refresh houses
+      await refreshHouses();
+      navigation.replace('Main');
     } catch (err: any) {
       console.error('Login error', err);
       Alert.alert('Login failed', err.message || 'Please check your credentials and try again');

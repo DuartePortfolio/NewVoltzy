@@ -55,7 +55,7 @@ router.get('/houses/:houseId/rooms/:roomName/lights', async (req, res) => {
 });
 
 // GET /api/lights/:lightId - Get single light details
-router.get('/:lightId', async (req, res) => {
+router.get('/lights/:lightId', async (req, res) => {
   const { lightId } = req.params;
 
   try {
@@ -79,7 +79,7 @@ router.get('/:lightId', async (req, res) => {
 });
 
 // POST /api/lights - Add new light
-router.post('/', async (req, res) => {
+router.post('/lights', async (req, res) => {
   const { house_id, room_name, name, is_on, brightness, color, power_consumption_watts } = req.body;
 
   if (!house_id || !room_name || !name) {
@@ -124,7 +124,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/lights/:lightId - Update light state
-router.put('/:lightId', async (req, res) => {
+router.put('/lights/:lightId', async (req, res) => {
   const { lightId } = req.params;
   const { is_on, brightness, color, name, room_name, power_consumption_watts } = req.body;
 
@@ -192,7 +192,7 @@ router.put('/:lightId', async (req, res) => {
 });
 
 // DELETE /api/lights/:lightId - Remove light
-router.delete('/:lightId', async (req, res) => {
+router.delete('/lights/:lightId', async (req, res) => {
   const { lightId } = req.params;
 
   try {

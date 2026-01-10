@@ -3,7 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { Svg, Path, Circle } from 'react-native-svg';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import styles from '../styles/signinStyles';
-import { signUp } from '../backend/auth'
+import { signUp } from '../backend/auth';
+import { useApp } from '../contexts/AppContext';
 
 type RootStackParamList = {
   Login: undefined;
@@ -15,6 +16,7 @@ type RootStackParamList = {
 type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
 
 const SignInScreen: React.FC<Props> = ({ navigation }) => {
+  const { setUser, refreshHouses } = useApp();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,7 +26,11 @@ const SignInScreen: React.FC<Props> = ({ navigation }) => {
       console.log('Sign Up attempt', { name, email });
       const res = await signUp({ name, email, password });
       console.log('SignUp response', res);
-      navigation.replace('Dashboard');
+      // Set user in context
+      setUser(res.user);
+      // Refresh houses
+      await refreshHouses();
+      navigation.replace('Main');
     } catch (err: any) {
       console.error('Sign up error', err);
       Alert.alert('Sign up failed', err.message || 'Please try again');

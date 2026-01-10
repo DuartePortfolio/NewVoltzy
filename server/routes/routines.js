@@ -49,7 +49,7 @@ router.get('/houses/:houseId/routines', async (req, res) => {
 });
 
 // GET /api/routines/:routineId - Get routine details
-router.get('/:routineId', async (req, res) => {
+router.get('/routines/:routineId', async (req, res) => {
   const { routineId } = req.params;
 
   try {
@@ -88,7 +88,7 @@ router.get('/:routineId', async (req, res) => {
 });
 
 // POST /api/routines - Create routine
-router.post('/', async (req, res) => {
+router.post('/routines', async (req, res) => {
   const {
     house_id,
     name,
@@ -163,7 +163,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/routines/:routineId - Update routine
-router.put('/:routineId', async (req, res) => {
+router.put('/routines/:routineId', async (req, res) => {
   const { routineId } = req.params;
   const {
     name,
@@ -238,7 +238,7 @@ router.put('/:routineId', async (req, res) => {
 });
 
 // DELETE /api/routines/:routineId - Delete routine
-router.delete('/:routineId', async (req, res) => {
+router.delete('/routines/:routineId', async (req, res) => {
   const { routineId } = req.params;
 
   try {
@@ -261,7 +261,7 @@ router.delete('/:routineId', async (req, res) => {
 });
 
 // PUT /api/routines/:routineId/toggle - Activate/deactivate routine
-router.put('/:routineId/toggle', async (req, res) => {
+router.put('/routines/:routineId/toggle', async (req, res) => {
   const { routineId } = req.params;
 
   try {

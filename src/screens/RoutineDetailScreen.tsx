@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,19 +6,58 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
-import { mockRoutines, PROFILE_PLACEHOLDER } from '../data/mockData';
+import { PROFILE_PLACEHOLDER } from '../data/mockData';
+import { routinesService, Routine } from '../services/routinesService';
 
 export default function RoutineDetailScreen({ route, navigation }: any) {
   const { routineId } = route.params;
-  const routine = mockRoutines.find((r) => r.id === routineId) || mockRoutines[0];
+  const [routine, setRoutine] = useState<Routine | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const [isActive, setIsActive] = useState(routine.isActive);
-  const [lightsState, setLightsState] = useState<'on' | 'low' | 'off'>(routine.lightsState);
-  const [startTime, setStartTime] = useState(routine.startTime);
-  const [endTime, setEndTime] = useState(routine.endTime);
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    loadRoutine();
+  }, [routineId]);
+
+  const loadRoutine = async () => {
+    try {
+      setLoading(true);
+      const data = await routinesService.getRoutine(routineId);
+      setRoutine(data);
+      setIsActive(data.active);
+    } catch (error: any) {
+      console.error('Failed to load routine:', error);
+      Alert.alert('Error', 'Failed to load routine details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleActive = async () => {
+    try {
+      await routinesService.toggleRoutine(routineId);
+      setIsActive(!isActive);
+    } catch (error: any) {
+      console.error('Failed to toggle routine:', error);
+      Alert.alert('Error', 'Failed to toggle routine');
+    }
+  };
+
+  if (loading || !routine) {
+    return (
+      <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+        </View>
+      </LinearGradient>
+    );
+  }
 
   return (
     <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
@@ -75,91 +114,45 @@ export default function RoutineDetailScreen({ route, navigation }: any) {
 
         {/* Routine Name */}
         <Text style={styles.routineName}>{routine.name}</Text>
+        {routine.description && (
+          <Text style={{ color: '#FFFFFF', textAlign: 'center', marginTop: 8, fontSize: 14 }}>
+            {routine.description}
+          </Text>
+        )}
 
         {/* State Toggle */}
         <View style={styles.controlCard}>
           <Text style={styles.controlLabel}>State</Text>
           <TouchableOpacity
             style={[styles.toggle, isActive && styles.toggleOn]}
-            onPress={() => setIsActive(!isActive)}
+            onPress={handleToggleActive}
           >
             <View style={[styles.toggleKnob, isActive && styles.toggleKnobOn]} />
           </TouchableOpacity>
         </View>
 
-        {/* Lights State Selector */}
-        <View style={styles.controlCard}>
-          <Text style={styles.controlLabel}>Lights State</Text>
-          <View style={styles.stateButtons}>
-            <TouchableOpacity
-              style={[styles.stateButton, lightsState === 'on' && styles.stateButtonActive]}
-              onPress={() => setLightsState('on')}
-            >
-              <Text style={styles.stateButtonText}>On</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.stateButton, lightsState === 'low' && styles.stateButtonActive]}
-              onPress={() => setLightsState('low')}
-            >
-              <Text style={styles.stateButtonText}>Low Light</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.stateButton, lightsState === 'off' && styles.stateButtonActive]}
-              onPress={() => setLightsState('off')}
-            >
-              <Text style={styles.stateButtonText}>Off</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Color Control */}
-        <View style={styles.controlCard}>
-          <Text style={styles.controlLabel}>Color</Text>
-          <LinearGradient
-            colors={[
-              '#E8403B',
-              '#EB753C',
-              '#E9AB3E',
-              '#E7E040',
-              '#89E743',
-              '#3CCAE7',
-              '#694AE8',
-              '#B33ED5',
-            ]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.colorGradient}
-          />
-        </View>
-
-        {/* Time Pickers */}
+        {/* Time Display */}
         <View style={styles.controlCard}>
           <View style={styles.timeRow}>
             <View style={styles.timeSection}>
-              <Text style={styles.timeLabel}>Starting at</Text>
-              <View style={styles.timeButtons}>
-                <TouchableOpacity style={styles.timeButton}>
-                  <Text style={styles.timeButtonText}>{startTime.date}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.timeButton}>
-                  <Text style={styles.timeButtonText}>{startTime.time}</Text>
-                </TouchableOpacity>
-              </View>
+              <Text style={styles.timeLabel}>Start Time</Text>
+              <Text style={styles.timeButtonText}>{routine.start_time}</Text>
             </View>
 
             <View style={styles.timeSection}>
-              <Text style={[styles.timeLabel, styles.timeLabelRight]}>Ending at</Text>
-              <View style={styles.timeButtons}>
-                <TouchableOpacity style={styles.timeButton}>
-                  <Text style={styles.timeButtonText}>{endTime.date}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.timeButton}>
-                  <Text style={styles.timeButtonText}>{endTime.time}</Text>
-                </TouchableOpacity>
-              </View>
+              <Text style={[styles.timeLabel, styles.timeLabelRight]}>End Time</Text>
+              <Text style={styles.timeButtonText}>{routine.end_time}</Text>
             </View>
           </View>
         </View>
+
+        {/* Color Display (if available) */}
+        {routine.color && (
+          <View style={styles.controlCard}>
+            <Text style={styles.controlLabel}>Color</Text>
+            <View style={{ height: 40, backgroundColor: routine.color, borderRadius: 12, marginTop: 8 }} />
+          </View>
+        )}
       </ScrollView>
     </LinearGradient>
   );
