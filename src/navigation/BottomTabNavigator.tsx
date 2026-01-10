@@ -11,6 +11,7 @@ import RoutinesListScreen from '../screens/RoutinesListScreen';
 import RoutineDetailScreen from '../screens/RoutineDetailScreen';
 import ChooseARoomScreen from '../screens/ChooseARoomScreen';
 import DashboardScreen from '../screens/DashboardScreen';
+import ConsumptionScreen from '../screens/ConsumptionScreen';
 
 const Tab = createBottomTabNavigator();
 const LightsStack = createNativeStackNavigator();
