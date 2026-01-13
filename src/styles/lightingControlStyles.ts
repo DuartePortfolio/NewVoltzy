@@ -13,6 +13,7 @@ export default StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    pointerEvents: 'none',
   },
   scrollContent: {
     flexGrow: 1,
@@ -85,6 +86,8 @@ export default StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
+    zIndex: 100,
+    position: 'relative',
   },
   roomsTitle: {
     fontSize: 16,
@@ -104,6 +107,8 @@ export default StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
     gap: 8,
+    zIndex: 10,
+    position: 'relative',
   },
   addButtonText: {
     fontSize: 12,
@@ -148,6 +153,8 @@ export default StyleSheet.create({
     left: 0,
     right: 0,
     height: 96,
+    zIndex: 1,
+    pointerEvents: 'box-none',
   },
   navBackground: {
     position: 'absolute',
