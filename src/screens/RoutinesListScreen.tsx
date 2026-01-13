@@ -9,12 +9,14 @@ import {
   Dimensions,
   ActivityIndicator,
   Alert,
+  Pressable,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
+import { Svg, Path } from 'react-native-svg';
 import { PROFILE_PLACEHOLDER } from '../data/mockData';
 import { routinesService } from '../services/routinesService';
 import { useApp } from '../contexts/AppContext';
+import AddRoutineModal from '../components/AddRoutineModal';
 
 const { width } = Dimensions.get('window');
 
@@ -28,6 +30,8 @@ export default function RoutinesListScreen({ navigation }: any) {
   const { currentHouse } = useApp();
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [loading, setLoading] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
+
 
   useEffect(() => {
     loadRoutines();
@@ -51,9 +55,36 @@ export default function RoutinesListScreen({ navigation }: any) {
     navigation.navigate('RoutineDetail', { routineId });
   };
 
+  const handleAddRoutine = () => {
+    if (!currentHouse) {
+      Alert.alert('Erro', 'Não há uma casa selecionada');
+      return;
+    }
+    setModalVisible(true);
+  };
+
+  const handleModalClose = () => {
+    setModalVisible(false);
+  };
+
+  const handleRoutineCreated = () => {
+    loadRoutines();
+  };
+
   return (
-    <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+    <View style={styles.container}>
+      {/* Background com zIndex negativo */}
+      <LinearGradient 
+        colors={['#78B85E', '#1E7B45']} 
+        style={[StyleSheet.absoluteFill, { zIndex: -1 }]}
+        pointerEvents="none"
+      />
+      
+      {/* Conteúdo com zIndex positivo */}
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        style={{ zIndex: 1 }}
+      >
         {/* Decorative Blobs */}
         <View style={styles.blobContainer}>
           <View style={[styles.blob, { top: 120, left: -40 }]} />
@@ -90,7 +121,11 @@ export default function RoutinesListScreen({ navigation }: any) {
         {/* Section Header */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Choose a Routine</Text>
-          <TouchableOpacity style={styles.addButton}>
+          <TouchableOpacity 
+            onPress={handleAddRoutine}
+            activeOpacity={0.7}
+            style={styles.addButton}
+          >
             <Svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <Path
                 d="M7.99992 3.3335V12.6668M3.33325 8.00016H12.6666"
@@ -130,7 +165,15 @@ export default function RoutinesListScreen({ navigation }: any) {
           </View>
         )}
       </ScrollView>
-    </LinearGradient>
+
+      {/* Add Routine Modal */}
+      <AddRoutineModal
+        visible={modalVisible && !!currentHouse}
+        onClose={handleModalClose}
+        onSuccess={handleRoutineCreated}
+        houseId={currentHouse?.id || 0}
+      />
+    </View>
   );
 }
 
@@ -145,6 +188,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: '100%',
     height: '100%',
+    pointerEvents: 'none',
   },
   blob: {
     position: 'absolute',
