@@ -6,9 +6,9 @@
 // - Expo on device: use your machine IP (e.g. http://192.168.1.10:3000)
 // - Expo Go on physical device: use your PC's IP address on the same network
 
-// IMPORTANT: For physical device testing, use your PC's IP address:
-// Change 172.23.117.105 to your actual PC IP if different
-export const BASE_URL = 'http://172.23.117.105:3000';
+// IMPORTANT: For USB debugging, use localhost (requires: adb reverse tcp:3000 tcp:3000)
+// For WiFi testing, use your PC's IP address (e.g., http://172.23.113.162:3000)
+export const BASE_URL = 'http://localhost:3000';
 
 // Endpoints used by the app
 export const ENDPOINTS = {

@@ -11,6 +11,7 @@ type RootStackParamList = {
   SignIn: undefined;
   Dashboard: undefined;
   Welcome: undefined;
+  Main: undefined;
 };
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;

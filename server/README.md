@@ -34,3 +34,4 @@ Notes
 - Passwords are hashed with `bcrypt`.
 - The server issues a JWT signed with `JWT_SECRET`.
 - For production, add rate-limiting, input validation, HTTPS, and secure secret management.
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" reverse tcp:3000 tcp:3000 for usb debugging, run this in terminal before testing
