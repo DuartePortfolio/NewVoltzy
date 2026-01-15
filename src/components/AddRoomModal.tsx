@@ -1,17 +1,14 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  Modal,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
+import { 
+  Modal, 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  StyleSheet, 
   ActivityIndicator,
-  Alert,
-  Pressable,
+  Alert
 } from 'react-native';
-import { Svg, Path } from 'react-native-svg';
-import { housesService } from '../services/housesService';
 
 interface AddRoomModalProps {
   visible: boolean;
@@ -20,206 +17,153 @@ interface AddRoomModalProps {
   houseId: number;
 }
 
-const AddRoomModal: React.FC<AddRoomModalProps> = ({ visible, onClose, onSuccess, houseId }) => {
+export default function AddRoomModal({ visible, onClose, onSuccess, houseId }: AddRoomModalProps) {
   const [roomName, setRoomName] = useState('');
   const [loading, setLoading] = useState(false);
 
-
-  const handleSubmit = async () => {
-    // Validação
+  const handleSave = async () => {
     if (!roomName.trim()) {
-      Alert.alert('Erro', 'Por favor, insira um nome para o room');
+      Alert.alert('Error', 'Please enter a room name');
       return;
     }
 
+    setLoading(true);
     try {
-      setLoading(true);
-      await housesService.createRoom(houseId, { name: roomName.trim() });
+      // Simulação da chamada API (Substitui pela tua chamada real)
+      console.log(`Saving room: ${roomName} for house ${houseId}`);
       
-      // Limpar o campo e fechar o modal
-      setRoomName('');
-      onClose();
-      onSuccess(); // Recarregar a lista de rooms
+      // await api.post('/rooms', { name: roomName, houseId }); <--- A TUA API AQUI
       
-      Alert.alert('Sucesso', 'Room criado com sucesso!');
-    } catch (error: any) {
-      console.error('Erro ao criar room:', error);
-      Alert.alert('Erro', error.message || 'Falha ao criar room. Tente novamente.');
-    } finally {
+      // Simular delay
+      setTimeout(() => {
+        setLoading(false);
+        setRoomName(''); // Limpar
+        onSuccess();     // Recarregar lista
+        onClose();       // Fechar
+      }, 1000);
+
+    } catch (error) {
+      console.error(error);
       setLoading(false);
+      Alert.alert('Error', 'Failed to create room');
     }
   };
-
-  const handleClose = () => {
-    if (!loading) {
-      setRoomName('');
-      onClose();
-    }
-  };
-
-  if (!visible) {
-    return null;
-  }
 
   return (
     <Modal
-      visible={visible}
-      transparent={true}
       animationType="fade"
-      onRequestClose={handleClose}
-      statusBarTranslucent={true}
+      transparent={true}
+      visible={visible}
+      onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <Pressable 
-          style={StyleSheet.absoluteFill}
-          onPress={handleClose}
-        />
-        <View 
-          style={styles.modalContainer}
-        >
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.title}>Adicionar Room</Text>
-              <TouchableOpacity onPress={handleClose} disabled={loading}>
-                <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <Path
-                    d="M18 6L6 18M6 6L18 18"
-                    stroke="#1E1E1E"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </Svg>
-              </TouchableOpacity>
-            </View>
+        {/* Fundo escuro clicável para fechar */}
+        <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} activeOpacity={1} />
+        
+        <View style={styles.modalContainer}>
+          <Text style={styles.title}>Add New Room</Text>
+          
+          <Text style={styles.label}>Room Name</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. Living Room"
+            placeholderTextColor="rgba(255,255,255,0.5)"
+            value={roomName}
+            onChangeText={setRoomName}
+            autoFocus={true} // Ajuda no Web
+          />
 
-            {/* Form */}
-            <View style={styles.form}>
-              <Text style={styles.label}>Nome do Room</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Ex: Kitchen, Bedroom, Living Room"
-                placeholderTextColor="#999"
-                value={roomName}
-                onChangeText={setRoomName}
-                editable={!loading}
-                autoCapitalize="words"
-              />
-            </View>
+          <View style={styles.buttonRow}>
+            <TouchableOpacity onPress={onClose} style={[styles.button, styles.cancelButton]}>
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
 
-            {/* Buttons */}
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
-                onPress={handleClose}
-                disabled={loading}
-              >
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.button, styles.submitButton, loading && styles.buttonDisabled]}
-                onPress={handleSubmit}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.submitButtonText}>Criar</Text>
-                )}
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity 
+              onPress={handleSave} 
+              style={[styles.button, styles.saveButton]}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#000" size="small" />
+              ) : (
+                <Text style={[styles.buttonText, { color: '#000' }]}>Save</Text>
+              )}
+            </TouchableOpacity>
           </View>
+        </View>
       </View>
     </Modal>
   );
-};
+}
 
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0,0,0,0.6)', // Fundo escuro
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
     width: '100%',
     maxWidth: 400,
+    backgroundColor: '#2A4D35', // Cor do teu tema (Verde Escuro)
+    borderRadius: 24,
     padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
   },
   title: {
     fontSize: 24,
-    fontWeight: '700',
-    color: '#1E1E1E',
-    fontFamily: 'Comfortaa',
-  },
-  form: {
-    marginBottom: 24,
+    fontWeight: 'bold',
+    color: '#FFF',
+    marginBottom: 20,
+    textAlign: 'center',
+    fontFamily: 'Comfortaa-Bold', // A tua fonte
   },
   label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E1E1E',
+    color: '#AAC1B0',
     marginBottom: 8,
-    fontFamily: 'Comfortaa',
+    fontSize: 14,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 12,
     padding: 16,
+    color: '#FFF',
     fontSize: 16,
-    backgroundColor: '#F5F5F5',
-    fontFamily: 'Comfortaa',
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  buttonContainer: {
+  buttonRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     gap: 12,
   },
   button: {
     flex: 1,
-    paddingVertical: 14,
+    padding: 16,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelButton: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: 'rgba(255,255,255,0.2)',
   },
-  cancelButtonText: {
+  saveButton: {
+    backgroundColor: '#4CAF50', // Verde destaque
+  },
+  buttonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1E1E1E',
-    fontFamily: 'Comfortaa',
-  },
-  submitButton: {
-    backgroundColor: '#1E7B45',
-  },
-  submitButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    fontFamily: 'Comfortaa',
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
+  }
 });
-
-export default AddRoomModal;

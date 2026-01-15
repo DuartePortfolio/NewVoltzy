@@ -37,6 +37,12 @@ export default function RoutinesListScreen({ navigation }: any) {
     loadRoutines();
   }, [currentHouse]);
 
+  useEffect(() => {
+    console.log('[AddRoutine] modalVisible mudou para:', modalVisible);
+    console.log('[AddRoutine] currentHouse:', currentHouse);
+    console.log('[AddRoutine] Condição para mostrar modal:', modalVisible && !!currentHouse);
+  }, [modalVisible, currentHouse]);
+
   const loadRoutines = async () => {
     if (!currentHouse) return;
     try {
@@ -56,11 +62,17 @@ export default function RoutinesListScreen({ navigation }: any) {
   };
 
   const handleAddRoutine = () => {
+    console.log('[AddRoutine] Botão clicado');
+    console.log('[AddRoutine] currentHouse:', currentHouse);
+    console.log('[AddRoutine] modalVisible antes:', modalVisible);
+    
     if (!currentHouse) {
       Alert.alert('Erro', 'Não há uma casa selecionada');
       return;
     }
+    
     setModalVisible(true);
+    console.log('[AddRoutine] setModalVisible(true) executado');
   };
 
   const handleModalClose = () => {

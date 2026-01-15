@@ -71,3 +71,8 @@ web-build/
 # Git lock files (OneDrive pode bloquear)
 .git/objects/maintenance.lock
 .git/index.lock
+
+# OneDrive desktop.ini files
+**/desktop.ini
+node_modules/**/desktop.ini
+metro.config.js
