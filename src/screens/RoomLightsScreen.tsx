@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Ellipse } from 'react-native-svg';
+import { useFocusEffect } from '@react-navigation/native';
 import { PROFILE_PLACEHOLDER } from '../data/mockData';
 import { useApp } from '../contexts/AppContext';
 import { lightsService, Light } from '../services/lightsService';
@@ -23,9 +24,12 @@ export default function RoomLightsScreen({ navigation, route }: any) {
   const [lights, setLights] = useState<Light[]>([]);
   const [loading, setLoading] = useState(true);
   
-  useEffect(() => {
-    loadLights();
-  }, [currentHouse, roomName]);
+  // Reload lights when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadLights();
+    }, [currentHouse, roomName])
+  );
 
   const loadLights = async () => {
     if (!currentHouse) {

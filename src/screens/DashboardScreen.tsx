@@ -1,6 +1,9 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, Switch, ScrollView, TouchableOpacity } from 'react-native';
-import { Svg, Path, Defs, LinearGradient, Stop, Circle } from 'react-native-svg';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Switch, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
+import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native';
+import { PROFILE_PLACEHOLDER } from '../data/mockData';
 import styles from '../styles/dashboardStyles';
 
 const DashboardScreen: React.FC = () => {
@@ -12,10 +15,63 @@ const DashboardScreen: React.FC = () => {
   });
 
   const [activeRoutine, setActiveRoutine] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const toggleLight = (key: string) => {
-    setLights(prev => ({ ...prev, [key]: !prev[key as keyof typeof prev] }));
+  // Reload data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadDashboardData();
+    }, [currentHouse])
+  );
+
+  const loadDashboardData = async () => {
+    if (!currentHouse) return;
+    try {
+      setLoading(true);
+      const [statsData, hourlyDataResult, lightsData, routinesData] = await Promise.all([
+        energyService.getCurrentStats(currentHouse.id),
+        energyService.getHourlyConsumption(currentHouse.id),
+        lightsService.getLightsByHouse(currentHouse.id),
+        routinesService.getRoutinesByHouse(currentHouse.id),
+      ]);
+      setEnergyStats(statsData);
+      setHourlyData(hourlyDataResult);
+      setLights(lightsData);
+      setRoutines(routinesData);
+    } catch (error: any) {
+      console.error('Failed to load dashboard data:', error);
+      Alert.alert('Error', 'Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const toggleLight = async (lightId: number) => {
+    try {
+      const light = lights.find(l => l.id === lightId);
+      if (!light) return;
+      await lightsService.toggleLight(lightId, light.is_on);
+      setLights(lights.map(l => l.id === lightId ? { ...l, is_on: !l.is_on } : l));
+      // Reload stats after toggling
+      if (currentHouse) {
+        const statsData = await energyService.getCurrentStats(currentHouse.id);
+        setEnergyStats(statsData);
+      }
+    } catch (error: any) {
+      console.error('Failed to toggle light:', error);
+      Alert.alert('Error', 'Failed to toggle light');
+    }
+  };
+
+  if (loading) {
+    return (
+      <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+        </View>
+      </LinearGradient>
+    );
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

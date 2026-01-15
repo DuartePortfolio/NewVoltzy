@@ -12,6 +12,37 @@ async function verifyHouseOwnership(houseId, userId) {
   return houses.length > 0;
 }
 
+// Helper function to update energy stats for a house
+async function updateEnergyStats(houseId) {
+  try {
+    // Calculate lights on count and current consumption
+    const [lightStats] = await pool.query(
+      `SELECT 
+        COUNT(CASE WHEN is_on = 1 THEN 1 END) as lights_on_count,
+        SUM(CASE WHEN is_on = 1 THEN power_consumption_watts ELSE 0 END) / 1000 as current_consumption_kw
+       FROM lights 
+       WHERE house_id = ?`,
+      [houseId]
+    );
+
+    const lightsOn = lightStats[0]?.lights_on_count || 0;
+    const currentConsumption = lightStats[0]?.current_consumption_kw || 0;
+
+    // Update or insert energy stats
+    await pool.query(
+      `INSERT INTO current_energy_stats (house_id, lights_on_count, current_consumption_kwh, today_consumption_kwh, today_saved_kwh)
+       VALUES (?, ?, ?, 0, 0)
+       ON DUPLICATE KEY UPDATE 
+         lights_on_count = VALUES(lights_on_count),
+         current_consumption_kwh = VALUES(current_consumption_kwh),
+         last_updated = CURRENT_TIMESTAMP`,
+      [houseId, lightsOn, currentConsumption]
+    );
+  } catch (error) {
+    console.error('Error updating energy stats:', error);
+  }
+}
+
 // GET /api/houses/:houseId/lights - Get all lights for a house
 router.get('/houses/:houseId/lights', async (req, res) => {
   const { houseId } = req.params;
@@ -104,6 +135,9 @@ router.post('/lights', async (req, res) => {
       ]
     );
 
+    // Update energy stats for this house
+    await updateEnergyStats(house_id);
+
     return res.status(201).json({
       message: 'Light created successfully',
       light: {
@@ -181,6 +215,10 @@ router.put('/lights/:lightId', async (req, res) => {
       [lightId]
     );
 
+    // Update energy stats for this house
+    const houseId = updatedLights[0].house_id;
+    await updateEnergyStats(houseId);
+
     return res.json({
       message: 'Light updated successfully',
       light: updatedLights[0]
@@ -197,7 +235,7 @@ router.delete('/lights/:lightId', async (req, res) => {
 
   try {
     const [lights] = await pool.query(
-      `SELECT l.id FROM lights l INNER JOIN houses h ON l.house_id = h.id WHERE l.id = ? AND h.user_id = ?`,
+      `SELECT l.id, l.house_id FROM lights l INNER JOIN houses h ON l.house_id = h.id WHERE l.id = ? AND h.user_id = ?`,
       [lightId, req.userId]
     );
 
@@ -205,7 +243,12 @@ router.delete('/lights/:lightId', async (req, res) => {
       return res.status(404).json({ message: 'Light not found' });
     }
 
+    const houseId = lights[0].house_id;
+    
     await pool.query('DELETE FROM lights WHERE id = ?', [lightId]);
+
+    // Update energy stats for this house
+    await updateEnergyStats(houseId);
 
     return res.json({ message: 'Light deleted successfully' });
   } catch (err) {
