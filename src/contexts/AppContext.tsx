@@ -103,3 +103,5 @@ export const useApp = (): AppContextType => {
   }
   return context;
 };
+
+export { AppContext };

@@ -29,7 +29,8 @@ interface Light {
 }
 
 export default function LightDetailScreen({ route, navigation }: any) {
-  const { lightId } = route.params;
+  const { lightId: lightIdParam } = route.params;
+  const lightId = Number(lightIdParam); // Ensure it's a number
   const { currentHouse } = useApp();
   const [light, setLight] = useState<Light | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,18 +59,45 @@ export default function LightDetailScreen({ route, navigation }: any) {
     }
   };
 
-  const handleSaveChanges = async () => {
+  const handleTogglePower = async () => {
+    const newState = !isOn;
+    setIsOn(newState);
+    
+    // Auto-save when toggling power
     try {
       await lightsService.updateLight(lightId, {
+        is_on: newState,
+      });
+      console.log('Light power updated:', newState);
+    } catch (error: any) {
+      console.error('Failed to update light power:', error);
+      // Revert on error
+      setIsOn(!newState);
+      Alert.alert('Error', 'Failed to update light');
+    }
+  };
+
+  const handleSaveChanges = async () => {
+    try {
+      console.log('Saving light changes:', {
+        lightId,
+        is_on: isOn,
+        brightness,
+        color: selectedColor,
+      });
+      
+      const updatedLight = await lightsService.updateLight(lightId, {
         is_on: isOn,
         brightness: brightness,
         color: selectedColor,
       });
+      
+      console.log('Light updated successfully:', updatedLight);
       Alert.alert('Success', 'Light updated successfully');
       navigation.goBack();
     } catch (error: any) {
       console.error('Failed to update light:', error);
-      Alert.alert('Error', 'Failed to update light');
+      Alert.alert('Error', `Failed to update light: ${error.message}`);
     }
   };
 
@@ -145,7 +173,7 @@ export default function LightDetailScreen({ route, navigation }: any) {
           <Text style={styles.controlLabel}>Power</Text>
           <TouchableOpacity
             style={[styles.toggle, isOn && styles.toggleOn]}
-            onPress={() => setIsOn(!isOn)}
+            onPress={handleTogglePower}
           >
             <View style={[styles.toggleKnob, isOn && styles.toggleKnobOn]} />
           </TouchableOpacity>

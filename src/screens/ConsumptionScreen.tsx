@@ -1,16 +1,61 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect, useContext } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, Ellipse } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import styles from '../styles/consumptionStyles';
 import { PROFILE_PLACEHOLDER } from '../data/mockData';
+import { energyService, CurrentEnergyStats, HourlyConsumption, RoomConsumption } from '../services/energyService';
+import { AppContext } from '../contexts/AppContext';
 
 type AnalysisPeriod = '15min' | '1hour' | 'today' | 'week';
 
 const ConsumptionScreen: React.FC = () => {
-  const [consumptionPeriod, setConsumptionPeriod] = useState<AnalysisPeriod>('15min');
+  const { currentHouse } = useContext(AppContext);
+  
+  const [consumptionPeriod, setConsumptionPeriod] = useState<AnalysisPeriod>('today');
   const [energyProductionPeriod, setEnergyProductionPeriod] = useState<AnalysisPeriod>('today');
   const [loadProductionPeriod, setLoadProductionPeriod] = useState<AnalysisPeriod>('today');
+  
+  // Data state
+  const [currentStats, setCurrentStats] = useState<CurrentEnergyStats | null>(null);
+  const [hourlyData, setHourlyData] = useState<HourlyConsumption | null>(null);
+  const [roomData, setRoomData] = useState<RoomConsumption[]>([]);
+  
+  // UI state
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch data on mount and when house changes
+  useEffect(() => {
+    const fetchEnergyData = async () => {
+      if (!currentHouse?.id) {
+        setLoading(false);
+        return;
+      }
+      
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const [stats, hourly, rooms] = await Promise.all([
+          energyService.getCurrentStats(currentHouse.id),
+          energyService.getHourlyConsumption(currentHouse.id),
+          energyService.getConsumptionByRoom(currentHouse.id),
+        ]);
+        
+        setCurrentStats(stats);
+        setHourlyData(hourly);
+        setRoomData(rooms);
+      } catch (err) {
+        console.error('Error fetching energy data:', err);
+        setError('Failed to load energy data. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchEnergyData();
+  }, [currentHouse?.id]);
 
   const renderAnalysisPeriodButtons = (
     currentPeriod: AnalysisPeriod,
@@ -122,6 +167,43 @@ const ConsumptionScreen: React.FC = () => {
     [false, false, true, false, true, true, false],
   ];
 
+  // Calculate total consumption from hourly data
+  const totalConsumption = hourlyData?.hourly_data.reduce((sum, item) => sum + Number(item.consumption_kwh), 0) || 0;
+  
+  // Calculate room percentages for progress bars
+  const totalRoomConsumption = roomData.reduce((sum, room) => sum + Number(room.current_consumption_kw), 0);
+  const getRoomPercentage = (consumption: number) => 
+    totalRoomConsumption > 0 ? Math.round((consumption / totalRoomConsumption) * 100) : 0;
+
+  // Show loading state
+  if (loading) {
+    return (
+      <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+          <Text style={{ color: '#FFFFFF', marginTop: 16, fontSize: 16 }}>Loading energy data...</Text>
+        </View>
+      </LinearGradient>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 18, textAlign: 'center', marginBottom: 16 }}>{error}</Text>
+          <TouchableOpacity 
+            style={{ backgroundColor: '#FFFFFF', padding: 12, borderRadius: 8 }}
+            onPress={() => window.location.reload()}
+          >
+            <Text style={{ color: '#1E7B45', fontSize: 16, fontWeight: 'bold' }}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
+    );
+  }
+
   return (
     <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -159,18 +241,18 @@ const ConsumptionScreen: React.FC = () => {
           </View>
 
           {/* House ID */}
-          <Text style={styles.houseId}>House 1</Text>
+          <Text style={styles.houseId}>{currentHouse?.name || 'My Home'}</Text>
         </View>
 
         {/* Today's Usage Card */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Today 's usage</Text>
+          <Text style={styles.cardTitle}>Today's usage</Text>
           <View style={styles.usageContent}>
             <View style={styles.usageLeft}>
-              <Text style={styles.usageItem}>Lights On: 5</Text>
-              <Text style={styles.usageItem}>Energy Used: 32.4kWh</Text>
-              <Text style={styles.usageItemLight}>Yesterday: +2%</Text>
-              <Text style={styles.usageItem}>Estimated Cost: 50$</Text>
+              <Text style={styles.usageItem}>Lights On: {currentStats?.lights_on_count || 0}</Text>
+              <Text style={styles.usageItem}>Energy Used: {Number(currentStats?.today_consumption_kwh || 0).toFixed(1)}kWh</Text>
+              <Text style={styles.usageItemLight}>Current: {Number(currentStats?.current_consumption_kwh || 0).toFixed(3)}kW</Text>
+              <Text style={styles.usageItem}>Estimated Cost: ${(Number(currentStats?.today_consumption_kwh || 0) * 0.15).toFixed(2)}</Text>
             </View>
             <View style={styles.usageRight}>
               <Svg width={128} height={127} viewBox="0 0 128 127" fill="none">
@@ -183,7 +265,7 @@ const ConsumptionScreen: React.FC = () => {
                   fill="#357850"
                 />
               </Svg>
-              <Text style={styles.usagePercentage}>32.4{'\n'}kWh</Text>
+              <Text style={styles.usagePercentage}>{Number(currentStats?.today_consumption_kwh || 0).toFixed(1)}{'\n'}kWh</Text>
             </View>
           </View>
         </View>
@@ -230,17 +312,25 @@ const ConsumptionScreen: React.FC = () => {
               </View>
             </View>
             <Text style={styles.graphFooterLabel}>Total consumption</Text>
-            <Text style={styles.graphFooterValue}>15 kW/h</Text>
+            <Text style={styles.graphFooterValue}>{totalConsumption.toFixed(2)} kWh</Text>
           </View>
         </View>
 
         {/* Appliance & Room Insights */}
-        <Text style={styles.sectionTitle}>Appliance & Room Insights</Text>
+        <Text style={styles.sectionTitle}>Room Consumption Insights</Text>
         <View style={styles.insightsContainer}>
-          {renderProgressBar('Lights', 24)}
-          {renderProgressBar('Heating & Cooling', 41)}
-          {renderProgressBar('Appliances', 19)}
-          {renderProgressBar('Others', 46)}
+          {roomData.length > 0 ? (
+            roomData.map((room) => (
+              <View key={room.room_name}>
+                {renderProgressBar(
+                  `${room.room_name} (${room.lights_on}/${room.light_count} on)`,
+                  getRoomPercentage(room.current_consumption_kw)
+                )}
+              </View>
+            ))
+          ) : (
+            <Text style={{ color: '#FFFFFF', textAlign: 'center', padding: 20 }}>No room data available</Text>
+          )}
         </View>
 
         {/* Energy Production */}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Switch, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
 import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native';
 import { PROFILE_PLACEHOLDER } from '../data/mockData';
 import styles from '../styles/dashboardStyles';
 import { energyService, CurrentEnergyStats, HourlyConsumption } from '../services/energyService';
@@ -26,9 +27,12 @@ const DashboardScreen: React.FC = () => {
   const [activeRoutine, setActiveRoutine] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, [currentHouse]);
+  // Reload data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadDashboardData();
+    }, [currentHouse])
+  );
 
   const loadDashboardData = async () => {
     if (!currentHouse) return;
