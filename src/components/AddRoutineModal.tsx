@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,6 @@ import {
   Alert,
   ScrollView,
   Switch,
-  Pressable,
 } from 'react-native';
 import { Svg, Path } from 'react-native-svg';
 import { routinesService, CreateRoutineData } from '../services/routinesService';
@@ -28,6 +27,8 @@ const AddRoutineModal: React.FC<AddRoutineModalProps> = ({ visible, onClose, onS
   const [startTime, setStartTime] = useState('08:00');
   const [endTime, setEndTime] = useState('22:00');
   const [loading, setLoading] = useState(false);
+
+  console.log('[AddRoutineModal] Render - visible:', visible, 'houseId:', houseId);
 
   
   // Dias da semana
@@ -123,8 +124,11 @@ const AddRoutineModal: React.FC<AddRoutineModalProps> = ({ visible, onClose, onS
   };
 
   if (!visible) {
+    console.log('[AddRoutineModal] Não visível - retornando null');
     return null;
   }
+
+  console.log('[AddRoutineModal] VISÍVEL - renderizando modal');
 
   const dayLabels: { [key: string]: string } = {
     monday: 'Segunda',
@@ -143,14 +147,16 @@ const AddRoutineModal: React.FC<AddRoutineModalProps> = ({ visible, onClose, onS
       animationType="fade"
       onRequestClose={handleClose}
       statusBarTranslucent={true}
+      style={{ margin: 0 }}
     >
-      <View style={styles.overlay}>
-        <Pressable 
-          style={StyleSheet.absoluteFill}
-          onPress={handleClose}
-        />
+      <View 
+        style={styles.overlay}
+        onStartShouldSetResponder={() => true}
+        onResponderGrant={handleClose}
+      >
         <View 
           style={styles.modalContainer}
+          onStartShouldSetResponder={() => true}
         >
           <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
               {/* Header */}
@@ -274,11 +280,17 @@ const AddRoutineModal: React.FC<AddRoutineModalProps> = ({ visible, onClose, onS
 
 const styles = StyleSheet.create({
   overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    zIndex: 9999,
   },
   modalContainer: {
     backgroundColor: '#FFFFFF',
@@ -292,6 +304,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    zIndex: 10000,
   },
   header: {
     flexDirection: 'row',

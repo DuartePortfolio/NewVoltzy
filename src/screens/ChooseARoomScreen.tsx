@@ -41,6 +41,12 @@ const ChooseARoomScreen: React.FC<Props> = ({ navigation }) => {
     loadRooms();
   }, [currentHouse]);
 
+  useEffect(() => {
+    console.log('[AddRoom] modalVisible mudou para:', modalVisible);
+    console.log('[AddRoom] currentHouse:', currentHouse);
+    console.log('[AddRoom] Condição para mostrar modal:', modalVisible && !!currentHouse);
+  }, [modalVisible, currentHouse]);
+
 
   const loadRooms = async () => {
     if (!currentHouse) {
@@ -67,11 +73,17 @@ const ChooseARoomScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const handleAddRoom = () => {
+    console.log('[AddRoom] Botão clicado');
+    console.log('[AddRoom] currentHouse:', currentHouse);
+    console.log('[AddRoom] modalVisible antes:', modalVisible);
+    
     if (!currentHouse) {
       Alert.alert('Erro', 'Não há uma casa selecionada');
       return;
     }
+    
     setModalVisible(true);
+    console.log('[AddRoom] setModalVisible(true) executado');
   };
 
   const handleModalClose = () => {
@@ -86,7 +98,7 @@ const ChooseARoomScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Background gradient and decorative blobs com zIndex negativo */}
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: -1 }} pointerEvents="none">
+      <View style={styles.backgroundSvg} pointerEvents="none">
         <Svg height="100%" width="100%" style={styles.backgroundSvg}>
         <Defs>
           <LinearGradient id="bgGradient" x1="0" y1="0" x2="0" y2="1">
@@ -150,8 +162,8 @@ const ChooseARoomScreen: React.FC<Props> = ({ navigation }) => {
       {/* Conteúdo com zIndex positivo */}
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
-        style={{ zIndex: 1 }}
-      >
+        style={{ zIndex: 1, flex: 1, height: '100%', width: '100%' }}
+        >
         {/* Glassmorphism Header */}
         <View style={styles.glassHeader}>
           <View style={styles.headerContent}>
