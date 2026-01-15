@@ -1,4 +1,5 @@
 import React from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
@@ -12,13 +13,18 @@ import { AppProvider } from './src/contexts/AppContext';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     Comfortaa: require('./assets/fonts/Comfortaa-Regular.ttf'),
     'Comfortaa-Bold': require('./assets/fonts/Comfortaa-Bold.ttf'),
   });
 
-  if (!fontsLoaded) {
-    return null;
+  // Show loading indicator while fonts load, or continue even if fonts fail
+  if (!fontsLoaded && !fontError) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1E7B45' }}>
+        <ActivityIndicator size="large" color="#FFFFFF" />
+      </View>
+    );
   }
 
   return (

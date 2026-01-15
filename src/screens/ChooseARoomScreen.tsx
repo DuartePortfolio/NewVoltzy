@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, Alert, Pressable } from 'react-native';
 import { Svg, Path, Ellipse, Defs, LinearGradient, Stop } from 'react-native-svg';
 import styles from '../styles/lightingControlStyles';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useApp } from '../contexts/AppContext';
 import { housesService } from '../services/housesService';
+import AddRoomModal from '../components/AddRoomModal';
 
 type RootStackParamList = {
   Login: undefined;
@@ -34,10 +35,18 @@ const ChooseARoomScreen: React.FC<Props> = ({ navigation }) => {
   const { currentHouse } = useApp();
   const [rooms, setRooms] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     loadRooms();
   }, [currentHouse]);
+
+  useEffect(() => {
+    console.log('[AddRoom] modalVisible mudou para:', modalVisible);
+    console.log('[AddRoom] currentHouse:', currentHouse);
+    console.log('[AddRoom] Condição para mostrar modal:', modalVisible && !!currentHouse);
+  }, [modalVisible, currentHouse]);
+
 
   const loadRooms = async () => {
     if (!currentHouse) {
@@ -60,19 +69,37 @@ const ChooseARoomScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const handleRoomPress = (roomName: string) => {
-    console.log(`Room selected: ${roomName}`);
     navigation.navigate('RoomLights', { roomName });
   };
 
   const handleAddRoom = () => {
-    console.log('Add room pressed');
-    // TODO: Implement add room modal/screen
+    console.log('[AddRoom] Botão clicado');
+    console.log('[AddRoom] currentHouse:', currentHouse);
+    console.log('[AddRoom] modalVisible antes:', modalVisible);
+    
+    if (!currentHouse) {
+      Alert.alert('Erro', 'Não há uma casa selecionada');
+      return;
+    }
+    
+    setModalVisible(true);
+    console.log('[AddRoom] setModalVisible(true) executado');
+  };
+
+  const handleModalClose = () => {
+    setModalVisible(false);
+  };
+
+  const handleRoomCreated = () => {
+    // Recarregar a lista de rooms após criar um novo
+    loadRooms();
   };
 
   return (
     <View style={styles.container}>
-      {/* Background gradient and decorative blobs */}
-      <Svg height="100%" width="100%" style={styles.backgroundSvg}>
+      {/* Background gradient and decorative blobs com zIndex negativo */}
+      <View style={styles.backgroundSvg} pointerEvents="none">
+        <Svg height="100%" width="100%" style={styles.backgroundSvg}>
         <Defs>
           <LinearGradient id="bgGradient" x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor="#78B85E" />
@@ -130,8 +157,13 @@ const ChooseARoomScreen: React.FC<Props> = ({ navigation }) => {
           fill="url(#blob6)"
         />
       </Svg>
+      </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      {/* Conteúdo com zIndex positivo */}
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        style={{ zIndex: 1, flex: 1, height: '100%', width: '100%' }}
+        >
         {/* Glassmorphism Header */}
         <View style={styles.glassHeader}>
           <View style={styles.headerContent}>
@@ -171,7 +203,11 @@ const ChooseARoomScreen: React.FC<Props> = ({ navigation }) => {
         <View style={styles.roomsSection}>
           <View style={styles.roomsHeader}>
             <Text style={styles.roomsTitle}>Choose a Room</Text>
-            <TouchableOpacity style={styles.addButton} onPress={handleAddRoom} activeOpacity={0.7}>
+            <TouchableOpacity 
+              onPress={handleAddRoom}
+              activeOpacity={0.7}
+              style={styles.addButton}
+            >
               <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
                 <Path
                   d="M7.99992 3.3335V12.6668M3.33325 8.00016H12.6666"
@@ -305,6 +341,14 @@ const ChooseARoomScreen: React.FC<Props> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Add Room Modal */}
+      <AddRoomModal
+        visible={modalVisible && !!currentHouse}
+        onClose={handleModalClose}
+        onSuccess={handleRoomCreated}
+        houseId={currentHouse?.id || 0}
+      />
     </View>
   );
 };
