@@ -11,7 +11,7 @@ import { lightsService } from '../services/lightsService';
 import { routinesService } from '../services/routinesService';
 
 const DashboardScreen: React.FC = () => {
-  const { user, currentHouse } = useApp();
+  const { user, currentHouse, isDarkMode, toggleDarkMode, theme } = useApp();
   
   const [lights, setLights] = useState<any[]>([]);
   const [routines, setRoutines] = useState<any[]>([]);
@@ -71,7 +71,7 @@ const DashboardScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
+      <LinearGradient colors={theme.gradient} style={styles.container}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#FFFFFF" />
         </View>
@@ -80,7 +80,7 @@ const DashboardScreen: React.FC = () => {
   }
 
   return (
-    <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
+    <LinearGradient colors={theme.gradient} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.topArea}>
           <View style={styles.headerRow}>
@@ -95,9 +95,20 @@ const DashboardScreen: React.FC = () => {
               <Text style={styles.houseText}>{currentHouse?.name || 'House'}</Text>
             </View>
 
-            <TouchableOpacity>
-              <View style={styles.avatar} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ color: theme.colors.textMuted, fontSize: 10, marginBottom: 2 }}>Dark</Text>
+                <Switch
+                  value={isDarkMode}
+                  onValueChange={toggleDarkMode}
+                  trackColor={{ false: '#777', true: theme.colors.tabIconActiveBg }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+              <TouchableOpacity>
+                <View style={styles.avatar} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.statsRow}>

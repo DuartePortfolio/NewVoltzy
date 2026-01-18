@@ -13,8 +13,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import { PROFILE_PLACEHOLDER } from '../data/mockData';
 import { routinesService, Routine } from '../services/routinesService';
+import { useApp } from '../contexts/AppContext';
 
 export default function RoutineDetailScreen({ route, navigation }: any) {
+  const { theme } = useApp();
   const { routineId } = route.params;
   const [routine, setRoutine] = useState<Routine | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,7 +53,7 @@ export default function RoutineDetailScreen({ route, navigation }: any) {
 
   if (loading || !routine) {
     return (
-      <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
+      <LinearGradient colors={theme.gradient} style={styles.container}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#FFFFFF" />
         </View>
@@ -60,7 +62,7 @@ export default function RoutineDetailScreen({ route, navigation }: any) {
   }
 
   return (
-    <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
+    <LinearGradient colors={theme.gradient} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Decorative Blobs */}
         <View style={styles.blobContainer}>
