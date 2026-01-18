@@ -1,6 +1,8 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getToken } from '../backend/token';
 import { housesService, House } from '../services/housesService';
+import { darkTheme, lightTheme, Theme } from '../styles/theme';
 
 interface User {
   id: number;
@@ -19,6 +21,9 @@ interface AppContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   refreshHouses: () => Promise<void>;
+  isDarkMode: boolean;
+  toggleDarkMode: () => void;
+  theme: Theme;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -32,6 +37,10 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [currentHouse, setCurrentHouse] = useState<House | null>(null);
   const [houses, setHouses] = useState<House[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  const theme = isDarkMode ? darkTheme : lightTheme;
+  const toggleDarkMode = () => setIsDarkMode((prev) => !prev);
 
   const isAuthenticated = user !== null;
 
@@ -74,6 +83,33 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     checkAuth();
   }, []);
 
+  // Load persisted theme preference
+  useEffect(() => {
+    const loadTheme = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('voltzy.theme');
+        if (stored) {
+          setIsDarkMode(stored === 'dark');
+        }
+      } catch (error) {
+        console.error('Failed to load theme preference:', error);
+      }
+    };
+    loadTheme();
+  }, []);
+
+  // Persist theme preference
+  useEffect(() => {
+    const saveTheme = async () => {
+      try {
+        await AsyncStorage.setItem('voltzy.theme', isDarkMode ? 'dark' : 'light');
+      } catch (error) {
+        console.error('Failed to save theme preference:', error);
+      }
+    };
+    saveTheme();
+  }, [isDarkMode]);
+
   // Fetch houses when user changes
   useEffect(() => {
     if (user) {
@@ -91,6 +127,9 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     isAuthenticated,
     isLoading,
     refreshHouses,
+    isDarkMode,
+    toggleDarkMode,
+    theme,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

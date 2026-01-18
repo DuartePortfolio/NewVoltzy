@@ -31,7 +31,7 @@ interface Light {
 export default function LightDetailScreen({ route, navigation }: any) {
   const { lightId: lightIdParam } = route.params;
   const lightId = Number(lightIdParam); // Ensure it's a number
-  const { currentHouse } = useApp();
+  const { currentHouse, theme } = useApp();
   const [light, setLight] = useState<Light | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -103,7 +103,7 @@ export default function LightDetailScreen({ route, navigation }: any) {
 
   if (loading || !light) {
     return (
-      <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
+      <LinearGradient colors={theme.gradient} style={styles.container}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#FFFFFF" />
         </View>
@@ -112,7 +112,7 @@ export default function LightDetailScreen({ route, navigation }: any) {
   }
 
   return (
-    <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
+    <LinearGradient colors={theme.gradient} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Decorative Blobs */}
         <View style={styles.blobContainer}>

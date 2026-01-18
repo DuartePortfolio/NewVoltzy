@@ -15,14 +15,16 @@ import { useFocusEffect } from '@react-navigation/native';
 import { PROFILE_PLACEHOLDER } from '../data/mockData';
 import { useApp } from '../contexts/AppContext';
 import { lightsService, Light } from '../services/lightsService';
+import AddLightModal from '../components/AddLightModal';
 
 const { width } = Dimensions.get('window');
 
 export default function RoomLightsScreen({ navigation, route }: any) {
   const { roomName = 'Living Room' } = route.params || {};
-  const { currentHouse } = useApp();
+  const { currentHouse, theme } = useApp();
   const [lights, setLights] = useState<Light[]>([]);
   const [loading, setLoading] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
   
   // Reload lights when screen comes into focus
   useFocusEffect(
@@ -53,8 +55,21 @@ export default function RoomLightsScreen({ navigation, route }: any) {
     navigation.navigate('LightDetail', { lightId: lightId.toString() });
   };
 
+  const handleAddLight = () => {
+    if (!currentHouse) return;
+    setModalVisible(true);
+  };
+
+  const handleModalClose = () => {
+    setModalVisible(false);
+  };
+
+  const handleLightCreated = () => {
+    loadLights();
+  };
+
   return (
-    <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
+    <LinearGradient colors={theme.gradient} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Decorative Blobs - Simplified */}
         <View style={styles.blobContainer}>
@@ -112,7 +127,7 @@ export default function RoomLightsScreen({ navigation, route }: any) {
         {/* Section Header */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Choose a Light</Text>
-          <TouchableOpacity style={styles.addButton}>
+          <TouchableOpacity style={styles.addButton} onPress={handleAddLight}>
             <Svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <Path
                 d="M7.99992 3.3335V12.6668M3.33325 8.00016H12.6666"
@@ -150,6 +165,16 @@ export default function RoomLightsScreen({ navigation, route }: any) {
           <Text style={styles.editButtonText}>Edit Room</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {currentHouse && (
+        <AddLightModal
+          visible={modalVisible}
+          onClose={handleModalClose}
+          onSuccess={handleLightCreated}
+          houseId={currentHouse.id}
+          roomName={roomName}
+        />
+      )}
     </LinearGradient>
   );
 }

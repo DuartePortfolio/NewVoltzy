@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert
 } from 'react-native';
+import { housesService } from '../services/housesService';
 
 interface AddRoomModalProps {
   visible: boolean;
@@ -29,24 +30,20 @@ export default function AddRoomModal({ visible, onClose, onSuccess, houseId }: A
 
     setLoading(true);
     try {
-      // Simulação da chamada API (Substitui pela tua chamada real)
-      console.log(`Saving room: ${roomName} for house ${houseId}`);
-      
-      // await api.post('/rooms', { name: roomName, houseId }); <--- A TUA API AQUI
-      
-      // Simular delay
-      setTimeout(() => {
-        setLoading(false);
-        setRoomName(''); // Limpar
-        onSuccess();     // Recarregar lista
-        onClose();       // Fechar
-      }, 1000);
+      await housesService.createRoom(houseId, { name: roomName.trim() });
 
+      setRoomName('');
+      onSuccess();
+      onClose();
+      Alert.alert('Sucesso', 'Room criada com sucesso');
     } catch (error) {
       console.error(error);
       setLoading(false);
       Alert.alert('Error', 'Failed to create room');
+      return;
     }
+
+    setLoading(false);
   };
 
   return (

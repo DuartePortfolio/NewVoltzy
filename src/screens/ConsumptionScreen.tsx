@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
-import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, Ellipse } from 'react-native-svg';
+import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, Ellipse, Text as SvgText } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import styles from '../styles/consumptionStyles';
@@ -15,12 +15,13 @@ import {
   HeatmapData,
   SolarMetrics
 } from '../services/energyService';
-import { AppContext } from '../contexts/AppContext';
+import { AppContext, useApp } from '../contexts/AppContext';
 
 type AnalysisPeriod = '15min' | '1hour' | 'today' | 'week';
 
 const ConsumptionScreen: React.FC = () => {
   const { currentHouse } = useContext(AppContext);
+  const { theme } = useApp();
   
   const [consumptionPeriod, setConsumptionPeriod] = useState<AnalysisPeriod>('today');
   
@@ -289,7 +290,7 @@ const ConsumptionScreen: React.FC = () => {
   // Show loading state
   if (loading) {
     return (
-      <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
+      <LinearGradient colors={theme.gradient} style={styles.container}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#FFFFFF" />
           <Text style={{ color: '#FFFFFF', marginTop: 16, fontSize: 16 }}>Loading energy data...</Text>
@@ -301,7 +302,7 @@ const ConsumptionScreen: React.FC = () => {
   // Show error state
   if (error) {
     return (
-      <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
+      <LinearGradient colors={theme.gradient} style={styles.container}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
           <Text style={{ color: '#FFFFFF', fontSize: 18, textAlign: 'center', marginBottom: 16 }}>{error}</Text>
           <TouchableOpacity 
@@ -316,7 +317,7 @@ const ConsumptionScreen: React.FC = () => {
   }
 
   return (
-    <LinearGradient colors={['#78B85E', '#1E7B45']} style={styles.container}>
+    <LinearGradient colors={theme.gradient} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Decorative Blobs Background */}
         <Image
@@ -458,9 +459,9 @@ const ConsumptionScreen: React.FC = () => {
                     </>
                   )}
                   {productionGraphPoints.produced.length === 0 && (
-                    <Text x="142" y="72" textAnchor="middle" fill="#666" fontSize="14">
+                    <SvgText x="142" y="72" textAnchor="middle" fill="#666" fontSize="14">
                       No production data
-                    </Text>
+                    </SvgText>
                   )}
                 </Svg>
               </View>
@@ -531,9 +532,9 @@ const ConsumptionScreen: React.FC = () => {
                     </>
                   )}
                   {loadCurvePoints.consumption.length === 0 && (
-                    <Text x="146" y="62" textAnchor="middle" fill="#666" fontSize="14">
+                    <SvgText x="146" y="62" textAnchor="middle" fill="#666" fontSize="14">
                       No load curve data
-                    </Text>
+                    </SvgText>
                   )}
                 </Svg>
               </View>

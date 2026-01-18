@@ -27,7 +27,7 @@ interface Routine {
 }
 
 export default function RoutinesListScreen({ navigation }: any) {
-  const { currentHouse } = useApp();
+  const { currentHouse, theme } = useApp();
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -87,7 +87,7 @@ export default function RoutinesListScreen({ navigation }: any) {
     <View style={styles.container}>
       {/* Background com zIndex negativo */}
       <LinearGradient 
-        colors={['#78B85E', '#1E7B45']} 
+        colors={theme.gradient} 
         style={[StyleSheet.absoluteFill, { zIndex: -1 }]}
         pointerEvents="none"
       />
