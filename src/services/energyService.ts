@@ -26,6 +26,51 @@ export interface RoomConsumption {
   total_capacity_kw: number;
 }
 
+export interface EnergyMeasurement {
+  measurement_time: string;
+  active_energy_import_kwh: number;
+  active_energy_export_kwh: number;
+  inst_active_power_import_kw: number;
+  inst_active_power_export_kw: number;
+}
+
+export interface ProductionData {
+  date: string;
+  period: string;
+  data: EnergyMeasurement[];
+}
+
+export interface LoadCurveDataPoint {
+  measurement_time: string;
+  consumption_kw: number;
+  production_kw: number;
+  net_flow_kw: number;
+}
+
+export interface LoadCurveData {
+  date: string;
+  period: string;
+  data: LoadCurveDataPoint[];
+}
+
+export interface HeatmapHourData {
+  hour: number;
+  days: number[]; // Array of 7 values (Sunday to Saturday)
+}
+
+export interface HeatmapData {
+  heatmap: HeatmapHourData[];
+}
+
+export interface SolarMetrics {
+  has_upac: boolean;
+  upac_power_kw?: number;
+  self_sufficiency_percentage: number;
+  panel_efficiency_percentage: number;
+  total_production_today_kwh?: number;
+  total_consumption_today_kwh?: number;
+}
+
 class EnergyService {
   // Get current energy stats for dashboard
   async getCurrentStats(houseId: number): Promise<CurrentEnergyStats> {
@@ -50,6 +95,48 @@ class EnergyService {
       `/api/houses/${houseId}/energy/by-room`
     );
     return response.rooms;
+  }
+
+  // Get energy production data
+  async getProductionData(houseId: number, date?: string, period?: string): Promise<ProductionData> {
+    const params = new URLSearchParams();
+    if (date) params.append('date', date);
+    if (period) params.append('period', period);
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    
+    const response = await apiClient.get<ProductionData>(
+      `/api/houses/${houseId}/energy/production${queryString}`
+    );
+    return response;
+  }
+
+  // Get load and production curve data
+  async getLoadCurveData(houseId: number, date?: string, period?: string): Promise<LoadCurveData> {
+    const params = new URLSearchParams();
+    if (date) params.append('date', date);
+    if (period) params.append('period', period);
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    
+    const response = await apiClient.get<LoadCurveData>(
+      `/api/houses/${houseId}/energy/load-curve${queryString}`
+    );
+    return response;
+  }
+
+  // Get consumption heatmap data
+  async getHeatmapData(houseId: number): Promise<HeatmapData> {
+    const response = await apiClient.get<HeatmapData>(
+      `/api/houses/${houseId}/energy/heatmap`
+    );
+    return response;
+  }
+
+  // Get solar panel metrics
+  async getSolarMetrics(houseId: number): Promise<SolarMetrics> {
+    const response = await apiClient.get<SolarMetrics>(
+      `/api/houses/${houseId}/energy/solar-metrics`
+    );
+    return response;
   }
 
   // Update energy stats (for testing/simulation)
